@@ -74,12 +74,13 @@ namespace conway
         {
             if (!(event->buttons() & Qt::LeftButton)) return;
 
+            float hfactor = float(rect().height()) / game.height();
+            float wfactor = float(rect().width()) / game.width();
+            size_t x = event->x() / wfactor;
+            size_t y = event->y() / hfactor;
+
             if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
             {
-                float hfactor = float(rect().height()) / game.height();
-                float wfactor = float(rect().width()) / game.width();
-                size_t x = event->x() / wfactor;
-                size_t y = event->y() / hfactor;
                 if (x < game.width() && y < game.height())
                 {
                     game.set(y, x, true);
@@ -91,9 +92,20 @@ namespace conway
             {
                 QDrag* drag = new QDrag(this);
                 QMimeData* mimeData = new QMimeData;
-
                 std::ostringstream oss;
-                game.write(oss);
+
+                if ((QApplication::keyboardModifiers() & Qt::AltModifier) &&
+                    game.get(y, x))
+                {
+                    Game figure;
+                    game.extractFigureAt(figure, y, x);
+                    figure.write(oss);
+                }
+                else
+                {
+                    game.write(oss);
+                }
+
                 mimeData->setText(oss.str().c_str());
                 drag->setMimeData(mimeData);
 

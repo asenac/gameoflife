@@ -4,12 +4,13 @@
 #include <string>
 #include <istream>
 #include <ostream>
+#include <iostream>
 
 namespace conway
 {
     struct Game
     {
-        Game(size_t h_, size_t w_)
+        Game(size_t h_ = 0, size_t w_ = 0)
             : h(h_),
               w(w_),
               state(h, row_t(w, false)),
@@ -124,6 +125,66 @@ namespace conway
                 for (size_t j = 0; j < o.width() && j + x < w; ++j)
                 {
                     set(y + i, x + j, get(y + i, x + j) || o.get(i, j));
+                }
+            }
+        }
+
+        void extractFigureAt(Game& figure, size_t y, size_t x)
+        {
+            size_t nh = 1, nw = 1;
+
+            bool keepGoing;
+            do
+            {
+                keepGoing = false;
+
+                for (size_t j = 0; j < nw; ++j)
+                {
+                    if (y && get(y, x + j) && get(y - 1, x + j))
+                    {
+                        --y;
+                        ++nh;
+                        keepGoing = true;
+                        break;
+                    }
+
+                    if (y + nh < height() && get(y + nh - 1, x + j) &&
+                        get(y + nh, x + j))
+                    {
+                        ++nh;
+                        keepGoing = true;
+                        break;
+                    }
+                }
+
+                for (size_t i = 0; i < nh; ++i)
+                {
+                    if (x && get(y + i, x) && get(y + i, x - 1))
+                    {
+                        --x;
+                        ++nw;
+                        keepGoing = true;
+                        break;
+                    }
+
+                    if (x + nw < width() && get(y + i, x + nw - 1) &&
+                        get(y + i, x + nw))
+                    {
+                        ++nw;
+                        keepGoing = true;
+                        break;
+                    }
+                }
+            } while (keepGoing);
+
+            figure.clear();
+            figure.resize(nh, nw);
+
+            for (size_t i = 0; i < figure.height() && i + y < h; ++i)
+            {
+                for (size_t j = 0; j < figure.width() && j + x < w; ++j)
+                {
+                    figure.set(i, j, get(y + i, x + j));
                 }
             }
         }
