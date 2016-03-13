@@ -2,9 +2,11 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QFileDialog>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
@@ -12,6 +14,7 @@
 #include <QSpinBox>
 #include <cstdlib>
 #include <sstream>
+#include <iostream>
 
 using namespace conway;
 
@@ -22,18 +25,46 @@ using namespace conway;
 Canvas::Canvas(Game& game_)
     : game(game_),
       grid(false),
+      menu(this),
       dropInProgress(false),
       dropAction(Qt::CopyAction),
       dropGame(game)
 {
     setMinimumSize(500, 500);
     setAcceptDrops(true);
+
+    menu.addAction("Save image as...", this, SLOT(saveImage()));
 }
 
 void Canvas::setGrid(bool grid_)
 {
     grid = grid_;
     update();
+}
+
+void Canvas::showContextMenu(const QPoint& pos)
+{
+    const QPoint globalPos = mapToGlobal(pos);
+
+    menu.exec(globalPos);
+}
+
+void Canvas::saveImage()
+{
+    const QString fileName =
+        QFileDialog::getSaveFileName(this, "Save image as...", "./conway.png",
+                                     "Images (*.png *.xpm *.jpg *.bmp)");
+
+    if (fileName.isEmpty())
+        return;
+
+    float hfactor = float(rect().height()) / game.height();
+    float wfactor = float(rect().width()) / game.width();
+
+    QPixmap pix(wfactor * game.width(), hfactor * game.height());
+    QPainter painter(&pix);
+    draw(painter, pix.rect(), game);
+    pix.save(fileName);
 }
 
 void Canvas::paintEvent(QPaintEvent* event)
@@ -44,21 +75,31 @@ void Canvas::paintEvent(QPaintEvent* event)
 
 void Canvas::mousePressEvent(QMouseEvent* event)
 {
-    if (event->button() == Qt::LeftButton) dragStartPosition = event->pos();
+    if (event->button() == Qt::LeftButton)
+    {
+        dragStartPosition = event->pos();
+    }
+    else if (event->button() == Qt::RightButton)
+    {
+        showContextMenu(event->pos());
+    }
 }
 
 void Canvas::mouseReleaseEvent(QMouseEvent* event)
 {
-    if (QApplication::keyboardModifiers() & Qt::ShiftModifier) return;
-
-    float hfactor = float(rect().height()) / game.height();
-    float wfactor = float(rect().width()) / game.width();
-    size_t x = event->x() / wfactor;
-    size_t y = event->y() / hfactor;
-    if (x < game.width() && y < game.height())
+    if (event->button() == Qt::LeftButton)
     {
-        game.set(y, x, !game.get(y, x));
-        update();
+        if (QApplication::keyboardModifiers() & Qt::ShiftModifier) return;
+
+        float hfactor = float(rect().height()) / game.height();
+        float wfactor = float(rect().width()) / game.width();
+        size_t x = event->x() / wfactor;
+        size_t y = event->y() / hfactor;
+        if (x < game.width() && y < game.height())
+        {
+            game.set(y, x, !game.get(y, x));
+            update();
+        }
     }
 }
 
@@ -225,13 +266,13 @@ GameWidget::GameWidget()
     QGridLayout* gridLayout = new QGridLayout();
 
     widthSpinBox = new QSpinBox();
-    widthSpinBox->setRange(10, 200);
+    widthSpinBox->setRange(4, 200);
     widthSpinBox->setValue(defaultWidth);
     gridLayout->addWidget(new QLabel("Width"), 0, 0);
     gridLayout->addWidget(widthSpinBox, 0, 1);
 
     heightSpinBox = new QSpinBox();
-    heightSpinBox->setRange(10, 200);
+    heightSpinBox->setRange(4, 200);
     heightSpinBox->setValue(defaultHeight);
     gridLayout->addWidget(new QLabel("Height"), 0, 2);
     gridLayout->addWidget(heightSpinBox, 0, 3);

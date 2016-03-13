@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QWidget>
+#include <QMenu>
 #include "conway.hpp"
 
 class QSpinBox;
@@ -17,6 +18,10 @@ namespace conway
 
     public slots:
         void setGrid(bool grid_);
+
+        void showContextMenu(const QPoint&);
+
+        void saveImage();
 
     protected:
         virtual void paintEvent(QPaintEvent* event);
@@ -41,6 +46,7 @@ namespace conway
 
         Game& game;
         bool grid;
+        QMenu menu;
 
         // Drag and drop
         QPoint dragStartPosition;
