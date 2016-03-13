@@ -14,6 +14,7 @@
 #include <QSpinBox>
 #include <cstdlib>
 #include <sstream>
+#include <fstream>
 #include <iostream>
 
 using namespace conway;
@@ -34,6 +35,7 @@ Canvas::Canvas(Game& game_)
     setAcceptDrops(true);
 
     menu.addAction("Save image as...", this, SLOT(saveImage()));
+    menu.addAction("Save scenario as...", this, SLOT(saveScenario()));
 }
 
 void Canvas::setGrid(bool grid_)
@@ -65,6 +67,20 @@ void Canvas::saveImage()
     QPainter painter(&pix);
     draw(painter, pix.rect(), game);
     pix.save(fileName);
+}
+
+void Canvas::saveScenario()
+{
+    const QString fileName =
+        QFileDialog::getSaveFileName(this, "Save scenario as...", "./conway.txt",
+                                     "Text (*.txt)");
+
+    if (fileName.isEmpty())
+        return;
+
+    const std::string fileStr = fileName.toStdString();
+    std::ofstream of(fileStr.c_str());
+    game.write(of);
 }
 
 void Canvas::paintEvent(QPaintEvent* event)

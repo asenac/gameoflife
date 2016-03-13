@@ -23,6 +23,8 @@ namespace conway
 
         void saveImage();
 
+        void saveScenario();
+
     protected:
         virtual void paintEvent(QPaintEvent* event);
 
