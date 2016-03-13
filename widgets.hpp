@@ -45,7 +45,8 @@ namespace conway
     protected:
         virtual void paintEvent(QPaintEvent* event)
         {
-            draw(rect(), dropInProgress ? dropGame : game);
+            QPainter painter(this);
+            draw(painter, rect(), dropInProgress ? dropGame : game);
         }
 
         virtual void mousePressEvent(QMouseEvent* event)
@@ -93,21 +94,28 @@ namespace conway
                 QDrag* drag = new QDrag(this);
                 QMimeData* mimeData = new QMimeData;
                 std::ostringstream oss;
+                Game figure;
 
                 if ((QApplication::keyboardModifiers() & Qt::AltModifier) &&
                     game.get(y, x))
                 {
-                    Game figure;
                     game.extractFigureAt(figure, y, x);
                     figure.write(oss);
                 }
                 else
                 {
                     game.write(oss);
+
+                    QPixmap pix(wfactor * game.width(),
+                                hfactor * game.height());
+                    QPainter painter(&pix);
+                    draw(painter, pix.rect(), game);
+                    drag->setPixmap(pix);
                 }
 
                 mimeData->setText(oss.str().c_str());
                 drag->setMimeData(mimeData);
+
 
                 // Qt::DropAction dropAction =
                 drag->exec(Qt::CopyAction | Qt::MoveAction);
@@ -178,9 +186,8 @@ namespace conway
             mergeDropEvent(event, game);
         }
 
-        void draw(const QRect& rect, const Game& game)
+        void draw(QPainter& painter, const QRect& rect, const Game& game)
         {
-            QPainter painter(this);
             painter.setPen(Qt::gray);
 
             float hfactor = float(rect.height()) / game.height();
