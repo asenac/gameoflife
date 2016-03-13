@@ -117,6 +117,17 @@ namespace conway
             resize(h_, w_);
         }
 
+        void orWithAt(const Game& o, size_t y, size_t x)
+        {
+            for (size_t i = 0; i < o.height() && i + y < h; ++i)
+            {
+                for (size_t j = 0; j < o.width() && j + x < w; ++j)
+                {
+                    set(y + i, x + j, get(y + i, x + j) || o.get(i, j));
+                }
+            }
+        }
+
     protected:
         size_t h, w;
         typedef std::vector<bool> row_t;

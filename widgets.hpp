@@ -25,7 +25,11 @@ namespace conway
         Q_OBJECT
     public:
         Canvas(Game& game_)
-            : game(game_), grid(false), dropInProgress(false), dropGame(game)
+            : game(game_),
+              grid(false),
+              dropInProgress(false),
+              dropAction(Qt::CopyAction),
+              dropGame(game)
         {
             setMinimumSize(500, 500);
             setAcceptDrops(true);
@@ -103,14 +107,35 @@ namespace conway
             if (event->mimeData()->hasFormat("text/plain"))
             {
                 event->acceptProposedAction();
+                dropAction = event->dropAction();
                 dropInProgress = true;
             }
         }
 
-        void mergeDropEvent(QDropEvent* event, Game& game)
+        void mergeDropEvent(QDropEvent* event, Game& targetGame)
         {
             std::istringstream iss(event->mimeData()->text().toStdString());
-            game.read(iss);
+
+            if (dropAction & Qt::CopyAction)
+            {
+                Game tmpGame(0, 0);
+                tmpGame.read(iss);
+
+                float hfactor = float(rect().height()) / game.height();
+                float wfactor = float(rect().width()) / game.width();
+                size_t y = event->pos().y() / hfactor;
+                size_t x = event->pos().x() / wfactor;
+
+                if (y < targetGame.height() && x < targetGame.width())
+                {
+                    targetGame.orWithAt(tmpGame, y, x);
+                }
+            }
+            else
+            {
+                targetGame.read(iss);
+            }
+
             update();
         }
 
@@ -119,6 +144,8 @@ namespace conway
             if (dropInProgress)
             {
                 event->acceptProposedAction();
+                dropAction = event->dropAction();
+                dropGame = game; // resync
                 mergeDropEvent(event, dropGame);
             }
         }
@@ -134,8 +161,9 @@ namespace conway
 
         virtual void dropEvent(QDropEvent *event)
         {
-            mergeDropEvent(event, game);
+            //event->acceptProposedAction();
             dropInProgress = false;
+            mergeDropEvent(event, game);
         }
 
         void draw(const QRect& rect, const Game& game)
@@ -184,6 +212,7 @@ namespace conway
         // Drag and drop
         QPoint dragStartPosition;
         bool dropInProgress;
+        Qt::DropAction dropAction;
         Game dropGame; // Temporary game for drop actions
     };
 
