@@ -24,7 +24,8 @@ namespace conway
     {
         Q_OBJECT
     public:
-        Canvas(Game& game_) : game(game_), grid(false)
+        Canvas(Game& game_)
+            : game(game_), grid(false), dropInProgress(false), dropGame(game)
         {
             setMinimumSize(500, 500);
             setAcceptDrops(true);
@@ -38,7 +39,11 @@ namespace conway
         }
 
     protected:
-        virtual void paintEvent(QPaintEvent* event) { draw(rect()); }
+        virtual void paintEvent(QPaintEvent* event)
+        {
+            draw(rect(), dropInProgress ? dropGame : game);
+        }
+
         virtual void mousePressEvent(QMouseEvent* event)
         {
             if (event->button() == Qt::LeftButton)
@@ -96,18 +101,44 @@ namespace conway
         virtual void dragEnterEvent(QDragEnterEvent *event)
         {
             if (event->mimeData()->hasFormat("text/plain"))
+            {
                 event->acceptProposedAction();
+                dropInProgress = true;
+            }
+        }
+
+        void mergeDropEvent(QDropEvent* event, Game& game)
+        {
+            std::istringstream iss(event->mimeData()->text().toStdString());
+            game.read(iss);
+            update();
+        }
+
+        virtual void dragMoveEvent(QDragMoveEvent *event)
+        {
+            if (dropInProgress)
+            {
+                event->acceptProposedAction();
+                mergeDropEvent(event, dropGame);
+            }
+        }
+
+        virtual void dragLeaveEvent(QDragLeaveEvent *event)
+        {
+            if (dropInProgress)
+            {
+                dropInProgress = false;
+                update(); // Repaint to display the right game
+            }
         }
 
         virtual void dropEvent(QDropEvent *event)
         {
-            std::istringstream iss(event->mimeData()->text().toStdString());
-            game.read(iss);
-            event->acceptProposedAction();
-            update();
+            mergeDropEvent(event, game);
+            dropInProgress = false;
         }
 
-        void draw(const QRect& rect)
+        void draw(const QRect& rect, const Game& game)
         {
             QPainter painter(this);
             painter.setPen(Qt::gray);
@@ -149,7 +180,11 @@ namespace conway
 
         Game& game;
         bool grid;
+
+        // Drag and drop
         QPoint dragStartPosition;
+        bool dropInProgress;
+        Game dropGame; // Temporary game for drop actions
     };
 
     struct GameWidget : QWidget
