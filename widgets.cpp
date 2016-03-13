@@ -258,13 +258,13 @@ void Canvas::draw(QPainter& painter, const QRect& rect, const Game& game)
     if (grid)
     {
         // vertical lines
-        for (int i = 0; i <= game.width(); ++i)
+        for (size_t i = 0; i <= game.width(); ++i)
         {
             painter.drawLine(i * wfactor, 0, i * wfactor, maxHeight);
         }
 
         // horizontal lines
-        for (int i = 0; i <= game.height(); ++i)
+        for (size_t i = 0; i <= game.height(); ++i)
         {
             painter.drawLine(0, i * hfactor, maxWidth, i * hfactor);
         }
