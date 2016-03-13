@@ -116,7 +116,6 @@ namespace conway
                 mimeData->setText(oss.str().c_str());
                 drag->setMimeData(mimeData);
 
-
                 // Qt::DropAction dropAction =
                 drag->exec(Qt::CopyAction | Qt::MoveAction);
             }
